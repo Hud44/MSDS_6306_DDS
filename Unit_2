@@ -1,0 +1,387 @@
+---
+title: "For Live Session Unit 2"
+author: "Hudson"
+date: "1/8/2022"
+output: html_document
+---
+
+## This is the code used to complete the "For Live Session Unit 2" Assignments
+## Instruction ##
+
+###[Step 1]
+###Download into R Studio the PlayerBBall.csv dataset. This data set is every NBA basketball player from 1950 to present.  It contains their height, weight, position and the year they played (among other data.) (Position: F-Forward, C-Centers, F-C and C-F – Forward /Centers, G – Guards, F-G – Forward/Guards)  FYI: If you feel that these questions are open ended or at least a little vague, this is on purpose.  Answer the question as you understand it and make any assumptions you need to make ot answer the question and record those assumptions. (3-5 hours)
+
+
+#Step 1.1: 
+#Use the PlayerBBall.csv dataset to visually represent (summarize) the number of players in each position.
+```{r}
+#load in the PlayersBBall.csv data
+pd = PlayersBBall
+#Using a barplot to make the visual representation or number of players
+pp <- pd %>% ggplot(mapping = aes(x = position, y = after_stat(count), fill = position)) + geom_bar() + ggtitle("Number of Players v. Position") + xlab("Position") + ylab("Players")
+
+ggplotly(pp)
+```
+
+#Step 1.2:
+#Use the dataset to visually investigate the distribution of the weight of centers (C) is greater than the distribution of the weight of forwards (F).  
+```{r}
+#load in the PlayersBBall.csv data
+pd = PlayersBBall
+#Using histograms to visually represent the distributions of the weight of centers (C) and
+#   the weight of forwards (F)
+
+cw_data <- pd[pd$position == "C",] %>% ggplot(mapping = aes(x = weight)) + geom_histogram(binwidth = 10) + ggtitle("Weight of Centers") + xlab("Weight") + ylab("Count of Centers") + coord_cartesian(xlim = c(150, 300), ylim = c(0,400))
+cw_data
+
+fw_data <- pd[pd$position == "F",] %>% ggplot(mapping = aes(x = weight)) + geom_histogram(binwidth = 10) + ggtitle("Weight of Fowards") + xlab("Weight") + ylab("Count of Fowards") + coord_cartesian(xlim = c(150, 300), ylim = c(0,400))
+fw_data
+
+```
+#Step 1.3:
+#Use the dataset to visually investigate if the distribution of the height of centers (C) is greater than the distribution of the height of forwards (F).
+```{r}
+#load in the PlayersBBall.csv data
+pd = PlayersBBall
+
+
+#Using histograms to visually represent the distributions of the height of centers (C) and
+#   the height of forwards (F)
+
+#get barplot for centers height (ch_data)
+ch_data <- pd[pd$position == "C",] %>% ggplot(mapping = aes(x = height)) + geom_bar() +  scale_x_discrete(limits=c("6-0", "6-1", "6-2", "6-3", "6-4", "6-5", "6-6", "6-7", "6-8", "6-9", "6-10", "6-11", "7-0", "7-1", "7-2", "7-3", "7-4", "7-5", "7-6", "7-7", "7-8", "7-9", "7-10", "7-11", "8-0")) + ggtitle("Height of Centers") + xlab("Height") + ylab("Count of Centers") + coord_cartesian(ylim = c(0,300))
+ch_data
+
+#get barplot for forwards height (fh_data)
+fh_data <- pd[pd$position == "F",] %>% ggplot(mapping = aes(x = height)) + geom_bar() + scale_x_discrete(limits=c("6-0", "6-1", "6-2", "6-3", "6-4", "6-5", "6-6", "6-7", "6-8", "6-9", "6-10", "6-11", "7-0", "7-1", "7-2", "7-3", "7-4", "7-5", "7-6", "7-7", "7-8", "7-9", "7-10", "7-11", "8-0")) + ggtitle("Height of Fowards") + xlab("Height") + ylab("Count of Fowards") + coord_cartesian(ylim = c(0,300))
+fh_data
+
+```
+
+#Step 1.4:
+#Use the dataset to visually investigate if the distribution of height is different between any of the positions.  
+```{r}
+#load in the PlayersBBall.csv data
+pd = PlayersBBall
+
+#Create numeric vector based on "height" 
+for(i in 1:4550)
+{
+  if(grepl("-0", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-0", ".0000", pd$height[i])}
+  else 
+    if(grepl("-10", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-10", ".8333", pd$height[i])}
+  else 
+    if(grepl("-11", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-11", ".9167", pd$height[i])}
+  else
+    if(grepl("-1", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-1", ".0833", pd$height[i])}
+  else 
+    if(grepl("-2", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-2", ".1667", pd$height[i])}
+  else 
+    if(grepl("-3", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-3", ".2500", pd$height[i])}
+  else 
+    if(grepl("-4", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-4", ".3333", pd$height[i])}
+  else 
+    if(grepl("-5", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-5", ".4167", pd$height[i])}
+  else 
+    if(grepl("-6", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-6", ".5000", pd$height[i])}
+  else 
+    if(grepl("-7", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-7", ".5833", pd$height[i])}
+  else 
+    if(grepl("-8", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-8", ".6667", pd$height[i])}
+  else 
+    if(grepl("-9", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-9", ".7500", pd$height[i])}
+  else
+    {pdh[i]<- c("")}
+}
+
+
+#Transform the string to numeric values
+pdh<-as.numeric(pdh)
+
+
+#Using a scatter plot to visually represent the differences of the height distributions of each position
+h_data <- pd %>% ggplot(mapping = aes(x = position, y = pdh, fill = position)) + geom_boxplot()  + scale_y_discrete(limits=c(3:9)) + ggtitle("Height Distribution for Each Position") + xlab("Position") + ylab("Height Disribution") 
+
+#enabling interactive piece
+ggplotly(h_data)
+
+
+```
+
+#Step 1.5:
+#Use the dataset to investigate how the player’s height is related to the player’s weight. How does height change as the weight changes?  
+```{r}
+#load in the PlayersBBall.csv data
+pd = PlayersBBall
+
+#Create numeric vector based on "height" 
+for(i in 1:4550)
+{
+  if(grepl("-0", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-0", ".0000", pd$height[i])}
+  else 
+    if(grepl("-10", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-10", ".8333", pd$height[i])}
+  else 
+    if(grepl("-11", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-11", ".9167", pd$height[i])}
+  else
+    if(grepl("-1", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-1", ".0833", pd$height[i])}
+  else 
+    if(grepl("-2", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-2", ".1667", pd$height[i])}
+  else 
+    if(grepl("-3", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-3", ".2500", pd$height[i])}
+  else 
+    if(grepl("-4", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-4", ".3333", pd$height[i])}
+  else 
+    if(grepl("-5", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-5", ".4167", pd$height[i])}
+  else 
+    if(grepl("-6", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-6", ".5000", pd$height[i])}
+  else 
+    if(grepl("-7", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-7", ".5833", pd$height[i])}
+  else 
+    if(grepl("-8", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-8", ".6667", pd$height[i])}
+  else 
+    if(grepl("-9", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-9", ".7500", pd$height[i])}
+  else
+    {pdh[i]<- c("")}
+}
+
+
+#Transform the string to numeric values
+pdh<-as.numeric(pdh)
+
+
+#Create the plot
+hw_data <- pd %>% ggplot(mapping = aes(x = pdh, y = weight, fill = pdh))+ geom_smooth()+ggtitle("Height to Weight Relationship") + xlab("Height") + ylab("Weight") + scale_x_discrete(limits=c(3:9))
+
+#enabling interactive piece
+ggplotly(hw_data)
+
+```
+
+#Step 1.6:
+#Is their any difference in the relationship between height and weight between positions?  Are height and weight related differently for different positions.
+```{r}
+#load in the PlayersBBall.csv data
+pd = PlayersBBall
+
+#Create numeric vector based on "height" 
+for(i in 1:4550)
+{
+  if(grepl("-0", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-0", ".0000", pd$height[i])}
+  else 
+    if(grepl("-10", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-10", ".8333", pd$height[i])}
+  else 
+    if(grepl("-11", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-11", ".9167", pd$height[i])}
+  else
+    if(grepl("-1", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-1", ".0833", pd$height[i])}
+  else 
+    if(grepl("-2", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-2", ".1667", pd$height[i])}
+  else 
+    if(grepl("-3", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-3", ".2500", pd$height[i])}
+  else 
+    if(grepl("-4", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-4", ".3333", pd$height[i])}
+  else 
+    if(grepl("-5", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-5", ".4167", pd$height[i])}
+  else 
+    if(grepl("-6", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-6", ".5000", pd$height[i])}
+  else 
+    if(grepl("-7", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-7", ".5833", pd$height[i])}
+  else 
+    if(grepl("-8", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-8", ".6667", pd$height[i])}
+  else 
+    if(grepl("-9", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-9", ".7500", pd$height[i])}
+  else
+    {pdh[i]<- c("")}
+}
+
+
+#Transform the string to numeric values
+pdh<-as.numeric(pdh)
+
+#Create the plot
+hw_data <- pd %>% ggplot(mapping = aes(x = pdh, y = weight, color = position)) + geom_smooth()+ggtitle("Height to Weight Relationship Between Positions") + xlab("Height") + ylab("Weight") + scale_x_discrete(limits=c(3:9))
+
+#Create the plot
+hw_data_wrap <- pd %>% ggplot(mapping = aes(x = pdh, y = weight, color = position)) + geom_smooth()+ggtitle("Height to Weight Relationship Between Positions") + xlab("Height") + ylab("Weight") + scale_x_discrete(limits=c(3:9))+facet_wrap(~position)
+
+#enabling interactive piece
+ggplotly(hw_data)
+ggplotly(hw_data_wrap)
+
+```
+
+#Step 1.7:
+#A historian would like to investigate the claim that the heights of players have increased over the years.  Analyze this claim graphically / visually. 
+```{r}
+#load in the PlayersBBall.csv data
+pd = PlayersBBall
+
+#Create numeric vector based on "height" 
+for(i in 1:4550)
+{
+  if(grepl("-0", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-0", ".0000", pd$height[i])}
+  else 
+    if(grepl("-10", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-10", ".8333", pd$height[i])}
+  else 
+    if(grepl("-11", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-11", ".9167", pd$height[i])}
+  else
+    if(grepl("-1", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-1", ".0833", pd$height[i])}
+  else 
+    if(grepl("-2", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-2", ".1667", pd$height[i])}
+  else 
+    if(grepl("-3", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-3", ".2500", pd$height[i])}
+  else 
+    if(grepl("-4", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-4", ".3333", pd$height[i])}
+  else 
+    if(grepl("-5", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-5", ".4167", pd$height[i])}
+  else 
+    if(grepl("-6", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-6", ".5000", pd$height[i])}
+  else 
+    if(grepl("-7", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-7", ".5833", pd$height[i])}
+  else 
+    if(grepl("-8", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-8", ".6667", pd$height[i])}
+  else 
+    if(grepl("-9", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-9", ".7500", pd$height[i])}
+  else
+    {pdh[i]<- c("")}
+}
+
+
+#Transform the string to numeric values
+pdh<-as.numeric(pdh)
+
+#build height graphs over starting times plot to investigate the claim that the heights of players have increased over the years
+h_t_data_s <- pd %>% ggplot(mapping = aes(x = year_start, y = pdh)) + geom_smooth()
+ggplotly(h_t_data_s)
+
+
+```
+
+#Step 1.8:
+#Create a 3D plot of height vs. weight vs. year and color code the points by position.  
+```{r}
+#load in the PlayersBBall.csv data
+pd = PlayersBBall
+
+#Create numeric vector based on "height" 
+for(i in 1:4550)
+{
+  if(grepl("-0", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-0", ".0000", pd$height[i])}
+  else 
+    if(grepl("-10", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-10", ".8333", pd$height[i])}
+  else 
+    if(grepl("-11", pd$height[i], fixed = TRUE) == TRUE)
+    {pdh[i] <- gsub("-11", ".9167", pd$height[i])}
+  else
+    if(grepl("-1", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-1", ".0833", pd$height[i])}
+  else 
+    if(grepl("-2", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-2", ".1667", pd$height[i])}
+  else 
+    if(grepl("-3", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-3", ".2500", pd$height[i])}
+  else 
+    if(grepl("-4", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-4", ".3333", pd$height[i])}
+  else 
+    if(grepl("-5", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-5", ".4167", pd$height[i])}
+  else 
+    if(grepl("-6", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-6", ".5000", pd$height[i])}
+  else 
+    if(grepl("-7", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-7", ".5833", pd$height[i])}
+  else 
+    if(grepl("-8", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-8", ".6667", pd$height[i])}
+  else 
+    if(grepl("-9", pd$height[i], fixed = TRUE) == TRUE)
+      {pdh[i] <- gsub("-9", ".7500", pd$height[i])}
+  else
+    {pdh[i]<- c("")}
+}
+
+
+#Transform the string to numeric values
+pdh<-as.numeric(pdh)
+
+#mpg
+#p <- plot_ly(mpg, x = ~cty, y = ~hwy, z = ~displ, color = ~drv) %>%
+  ### add_markers() %>%
+  # layout(scene = list(xaxis = list(title = 'City MPG'),
+                     # yaxis = list(title = 'Displacement'),
+                     # zaxis = list(title = 'Highway MPG')))
+#p
+
+# Build 3D plot of height vs. weight vs. year and color code the points by position.
+h_w_y_data <- plot_ly(pd, x = ~pdh, y = ~weight, z = ~year_start, color = ~position) %>% layout(scene = list(xaxis = list(title = "Height"), yaxis = list(title = "Weight"), zaxis = list(title = "Year")))
+h_w_y_data
+
+```
+
+#Step 1.9:
+#Go to this website and use one of the 50 best plots to visualize some aspect of the data and provide at least one insight.  You will present your work in breakout! http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html
+```{r}
+
+```
+
+
+#####[Step 2]
+#####Separate dataset:  The EducationIncome.csv dataset has incomes of randomly selected Americans and their level of education.  (1-2 hours)
+
+#Step 2.1:
+#Visually test the claim that the distribution of incomes increase (mean or median) as the education level rises. 
+```{r}
+
+```
