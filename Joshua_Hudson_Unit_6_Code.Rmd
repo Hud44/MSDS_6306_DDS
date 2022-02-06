@@ -1,0 +1,88 @@
+---
+title: "Unit 6 Code"
+author: "Hudson"
+date: "2/5/2022"
+output: html_document
+---
+
+```{r}
+#load in the needed packages for this unit
+library(class)
+library(caret)
+library(e1071)
+library(plotly)
+```
+
+PART 1: TITANIC DATA
+```{r}
+#Try your best to access the data using the URL.  You may also find the data (titanic_train.csv) on github.  We will go over this data ingestion in live session. 
+sa_train <- titanic_train %>% filter(!is.na(Age) & !is.na(Survived) & !is.na(Pclass)) %>% select(Age, Survived, Pclass)
+sa_train
+###since data in the "Survived" Column is numeric, need to assign a human readable category to the numeric data
+for (i in 1:dim(sa_train[,"Age"])) {
+  if(sa_train$Survived[i] == 0){
+  sa_train$Survived[i] = "Died"} else if(sa_train$Survived[i] == 1){
+    sa_train$Survived[i] = "Survived"}
+}
+      
+#Class <- as.character(sa_train$Pclass)
+Class <- sa_train$Pclass
+Status <- sa_train$Survived
+sa_train <- data.frame(Age, Class, Status)
+
+#plot the suvival data 
+sa_plot <- sa_train %>% ggplot(mapping = aes(y = Age, x = Class, color = Status)) + geom_point() + ggtitle("Titanic Survival Data", subtitle = "Age vs Class")
+sa_plot
+
+#Part 1.2:
+#Use KNN to classify those who survived and died based on Age and class.
+kval = 20 #define the maximum k value 
+Accuracy = kval
+acc = data.frame(Accuracy)
+k_value = kval
+k_i = data.frame(k_value)
+
+df_k = data.frame(Accuracy, k_value) # Define a datframe that will be populated with kvalues and accuracy ratings
+for(i in 1:kval){#For loop to support determining the optimal k value 
+  
+  knn_pass = knn.cv(sa_train[,c(1,2)],sa_train$Status,  k = i+1)
+  knn_pass_cm[i] <- confusionMatrix(table(sa_train$Status, knn_pass))$overall[1]#stores the accuracy value in the dataframe
+  acc[i, 1] <- knn_pass_cm[i] #populates the accuracy dataframe
+  k_i[i, 1] <- i+1 #populates the k value dataframe
+  
+}
+
+df_k <- data.frame(k_i, acc) #combines the k value dataframe and the accuracy dataframe
+
+best_k <- df_k$k_value[which.max(df_k$Accuracy)] #identifies the optimal K value according to the highest accuracy rating
+best_k #print the optimal k value
+
+plot <- df_k %>% ggplot(mapping = aes(x = k_value, y = Accuracy)) + geom_line()+ geom_vline(xintercept = best_k ,color="green")#plots the k values vs accuracy ratings 
+
+knn_pass = knn.cv(sa_train[,c(1,2)],sa_train$Status,  k = best_k) #load the knn with the optimal kvalue
+knn_pass_table = table(sa_train$Status, Age, Class) #build the table with the optimal kvalue
+knn_pass_cm <- confusionMatrix(table(sa_train$Status, knn_pass)) #load the confusionmatrix with the optimal kvalue
+knn_pass_cm #print the confusion matrix
+
+#Part 1.3:
+#Use your age and predict your survival based on each of the ticket classes.  
+sa_test1 = data.frame(Age = 32, Class = 1)
+knn(sa_train[,1:2], sa_test1, sa_train$Status, k = best_k, prob = TRUE)
+
+sa_test2 = data.frame(Age = 32, Class = 2)
+knn(sa_train[,1:2], sa_test2, sa_train$Status, k = best_k, prob = TRUE)
+
+sa_test3 = data.frame(Age = 32, Class = 3)
+knn(sa_train[,1:2], sa_test3, sa_train$Status, k = best_k, prob = TRUE)
+
+#Part 1.4
+#Use your model to classify the 418 randomly selected passengers in the test set (titanic_test.csv) on github.  
+sa_test <- titanic_test %>% filter(!is.na(Age) & !is.na(Pclass)) %>% select(Age, Pclass)
+sa_test <- data.frame(sa_test)
+
+knn_class = knn(sa_train[,1:2], sa_test[,1:2], sa_train$Status, k = best_k, prob = TRUE)
+
+#Part 1.5
+#Create a confusion matrix and calculate the accuracy, misclassification rate, sensitivity and specificity.   Be prepared to explain these statistics. (It is ok if you have questions here… we will answer them in live session … just do your best in the time allotted.) 
+confusionMatrix(table(knn_class, sa_train$Status[1:length(sa_test$Age)]))
+```
