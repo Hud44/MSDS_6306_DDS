@@ -1,0 +1,186 @@
+---
+title: "Unit 7 Code"
+author: "Hudson"
+date: "2/12/2022"
+output: html_document
+---
+```{r}
+#load all relevant libraries
+library(caret) #confusion matrix
+library(e1071) #Naive Bayes-theorm
+library(tm) #text mining library provides the stopwords() function
+library(tidyr)
+library(plyr)
+library(jsonlite)
+library(dplyr)
+library(tidyverse)
+library(GGally)
+library(gridExtra)
+library(plotly)
+options(max.print = 1000000)
+```
+PART 1:
+In the last unit you used a KNN classifier to classify the passengers who survived and died.  Now we will use a Naïve Bayes (NB) classifier and compare the two! 
+```{r}
+#1.1
+#Using all 891 observations, train a NB model with Age and Pclass as predictors and use this model to predict the survival of a 30 year old passenger in the 1, 2 and 3 classes.  Use the “type = raw” option to look at the predicted percentage of each outcome. (One slide.)
+titanic <- titanic_train %>% filter(!is.na(Age)) %>% select(Survived, Pclass, Age, Sex)
+
+for (i in 1:dim(titanic[,"Age"])) {
+  if(titanic$Survived[i] == 0){
+  titanic$Survived[i] = "Died"} else if(titanic$Survived[i] == 1){
+    titanic$Survived[i] = "Survived"}
+}
+titanic %>% ggplot(mapping = aes(x = Age, y = Pclass, color = Survived)) + geom_point()
+head(titanic)
+
+model = naiveBayes(Survived~.,data = titanic)
+p <- predict(model,titanic[,c(2,3)], type = "raw")
+head(p)
+
+class1 = data.frame(Pclass = 1, Age = 30)
+class2 = data.frame(Pclass = 2, Age = 30)
+class3 = data.frame(Pclass = 3, Age = 30)
+
+predict(model,class1) #Class 1 classifications
+predict(model,class1, type = "raw") #gives probabilities for class 1
+
+predict(model,class2) #Class 2 classifications
+predict(model,class2, type = "raw") #gives probabilities for class 2
+
+predict(model,class3) #Class 3 classifications
+predict(model,class3, type = "raw") #gives probabilities for class 3
+```
+
+#1.2
+#Split the 891 observations into a training and test set 70% - 30% using this seed and code(One slide that shows the head of trainTitanic and testTitanic):
+```{r}
+titanicClean = titanic %>% filter(!is.na(Age) & !is.na(Pclass))
+set.seed(4)
+trainIndices = sample(seq(1:length(titanicClean$Age)),round(.7*length(titanicClean$Age)))
+trainTitanic = titanicClean[trainIndices,]
+head(trainTitanic)
+testTitanic = titanicClean[-trainIndices,]
+head(testTitanic)
+```
+
+#1.3
+#Train a NB model based on the training set using just the Age and Pclass variables. Use the model to predict the survival of those in the test set and use those results to evaluate the model based on accuracy, sensitivity and specificity. Finally, Compare the results to what you found with the KNN classifier. (At least one slide.)
+```{r}
+model2 = naiveBayes(Survived~.,data = trainTitanic, laplace = 1)
+table(predict(model2,testTitanic[,c(2,3)], laplace = 1))
+cm_NB = confusionMatrix(table(predict(model2,testTitanic[,c(2,3)]), as.factor(testTitanic$Survived)))
+cm_NB
+
+knn_class = knn(trainTitanic[,c(2,3)], testTitanic[,c(2,3)], trainTitanic$Survived, k = 5, prob = TRUE)
+cm_KNN = confusionMatrix(table(knn_class, trainTitanic$Survived[1:length(testTitanic$Age)]))
+cm_KNN
+```
+
+#1.4
+#Now repeat the above with a new seed and compare the accuracy, sensitivity and specificity.  Do this 3 or 4 times to observe the variance in the statistics. (At least one slide.)
+#round 1
+```{r}
+Model = "Prediction_Model"
+
+Accuracy = 1
+Sensitivity = 1
+Specificity = 1
+Seed_Value = 1
+
+Seed_val = data.frame(Seed_Value)
+NB_acc = data.frame(Accuracy)
+NB_Sens = data.frame(Sensitivity)
+NB_Spec = data.frame(Specificity)
+NB_mod = data.frame(Model)
+
+KNN_acc = data.frame(Accuracy)
+KNN_Sens = data.frame(Sensitivity)
+KNN_Spec = data.frame(Specificity)
+KNN_mod = data.frame(Model)
+
+for (i in 1:5) {
+  set.seed(i)
+  Seed_val[i, 1] <- i
+  trainIndices = sample(seq(1:length(titanicClean$Age)),round(.7*length(titanicClean$Age)))
+  trainTitanic = titanicClean[trainIndices,]
+  head(trainTitanic)
+  testTitanic = titanicClean[-trainIndices,]
+  head(testTitanic)
+  
+  model3 = naiveBayes(Survived~.,data = trainTitanic, laplace = 1)
+  tab_NB = table(predict(model3,testTitanic[,c(2,3)]), as.factor(testTitanic$Survived))
+  cm_NB = confusionMatrix(table(predict(model3,testTitanic[,c(2,3)]), as.factor(testTitanic$Survived)))
+  NB_acc[i,1] <- cm_NB$overall[1]
+  NB_Sens[i,1] <- sensitivity(tab_NB)
+  NB_Spec[i,1] <- specificity(tab_NB)
+  NB_mod[i, 1] <- "NB "
+  
+  
+  knn_class = knn(trainTitanic[,c(2,3)], testTitanic[,c(2,3)], trainTitanic$Survived, k = 5, prob = TRUE)
+  tab_KNN = table(knn_class, trainTitanic$Survived[1:length(testTitanic$Age)])
+  cm_KNN = confusionMatrix(table(knn_class, trainTitanic$Survived[1:length(testTitanic$Age)]))
+  KNN_acc[i,1] <- cm_KNN$overall[1]
+  KNN_Sens[i,1] <- sensitivity(tab_KNN)
+  KNN_Spec[i,1] <- specificity(tab_KNN)
+  KNN_mod[i, 1] <- "KNN "
+}
+NB_df <- data.frame( NB_mod, Seed_val, NB_acc, NB_Sens, NB_Spec)
+KNN_df <- data.frame(KNN_mod, Seed_val, KNN_acc, KNN_Sens, KNN_Spec)
+Final <- merge(NB_df, KNN_df, all = TRUE)
+Final %>%ggplot(mapping = aes(x = Seed_Value, y = Accuracy, color = Model)) + geom_point() + geom_smooth()
+Final %>%ggplot(mapping = aes(x = Seed_Value, y = Sensitivity, color = Model)) + geom_point() + geom_smooth()
+Final %>%ggplot(mapping = aes(x = Seed_Value, y = Specificity, color = Model)) + geom_point() + geom_smooth()
+```
+
+#
+#1.5
+#Write a loop to repeat the above for 100 different values of the seed.  Find the average of the accuracy, sensitivity and specificity to get a stable (smaller variance) statistic to evaluate the model.  (At least one slide.)
+```{r}
+Varience  = 1
+NB_Var = data.frame(Varience)
+for (i in 1:100) {
+  set.seed(i)
+  Seed_val[i, 1] <- i
+  trainIndices = sample(seq(1:length(titanicClean$Age)),round(.7*length(titanicClean$Age)))
+  trainTitanic = titanicClean[trainIndices,]
+  head(trainTitanic)
+  testTitanic = titanicClean[-trainIndices,]
+  head(testTitanic)
+  
+  model3 = naiveBayes(Survived~.,data = trainTitanic, laplace = 1)
+  tab_NB = table(predict(model3,testTitanic[,c(2,3)]), as.factor(testTitanic$Survived))
+  cm_NB = confusionMatrix(table(predict(model3,testTitanic[,c(2,3)]), as.factor(testTitanic$Survived)))
+  NB_acc[i,1] <- cm_NB$overall[1]
+  NB_Sens[i,1] <- sensitivity(tab_NB)
+  NB_Spec[i,1] <- specificity(tab_NB)
+  NB_mod[i, 1] <- "NB "
+  NB_Var[i, 1] <- var(c(NB_acc[i,1], NB_Sens[i,1], NB_Spec[i,1]))
+}
+NB_df <- data.frame( NB_mod, Seed_val, NB_acc, NB_Sens, NB_Spec, NB_Var)
+V <- NB_df %>% ggplot(mapping = aes(x = Seed_Value, y = Varience)) + geom_point() + geom_line()
+A <- NB_df %>% ggplot(mapping = aes(x = Seed_Value, y = Accuracy)) + geom_point() + geom_line()
+plot <- grid.arrange(A, V)
+plotly(plot)
+```
+#1.6
+#Now add Sex to the model so that it has Age, Pclass and Sex in the NB model.  Use the trainTitanic(set.seed(4)) dataframe to train the model and create a confusion matrix using the testTitanic dataframe.  In addition, find the Accuracy, Sensitivity and Specificity. (1 slide)
+
+#1.7
+#Again write a loop to get a stable estimate of the accuracy, sensitivity and specificity of this model (using 100 unique seeds).  (1 slide)
+
+#1.8
+#BONUS: Using the Male and Female KNN from the bonus of Unit 6, combine the two confusion matrices from the Male and Female KNN models to make one confusion matrix and find the accuracy, sensitivity and specificity based on that model.  Compare this with the performance of your NB model.  Do you prefer one over the other?  
+
+
+
+PART 2
+For the full (multinomial) IRIS data (the iris dataset in R), do a 70-30 train/test cross validation and use sepal length and width as predictors.  
+```{r}
+#2.1
+#Generate 100 different train/test splits and calculate the average accuracy, sensitivity and specificity.  .
+
+#2.2
+#Compare the average accuracy to that to the KNN model you used in Unit 6.  
+
+```
