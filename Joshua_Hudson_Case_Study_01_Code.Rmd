@@ -1,0 +1,256 @@
+---
+title: "Case Study 01"
+author: "Hudson"
+date: "2/17/2022"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#read in the datasets
+library(readr)
+beer = read_csv("C:\\Users\\Hudson\\OneDrive\\Documents\\Josh - Masters\\Doing Data Science - MSDS_6306\\Case Study 1\\Beers.csv")
+brew = read_csv("C:\\Users\\Hudson\\OneDrive\\Documents\\Josh - Masters\\Doing Data Science - MSDS_6306\\Case Study 1\\Breweries.csv")
+ab_brew = read_csv("C:\\Users\\Hudson\\OneDrive\\Documents\\Josh - Masters\\Doing Data Science - MSDS_6306\\Case Study 1\\AB_Breweries.csv")
+ab_beer = read_csv("C:\\Users\\Hudson\\OneDrive\\Documents\\Josh - Masters\\Doing Data Science - MSDS_6306\\Case Study 1\\AB_Beers.csv")
+consume = read_csv("C:\\Users\\Hudson\\OneDrive\\Documents\\Josh - Masters\\Doing Data Science - MSDS_6306\\Case Study 1\\Beer_Consumption_By_State.csv")
+```
+
+```{r}
+#load the needed libraries
+library(ggplot2)
+library(GGally)
+library(magrittr)
+library(dplyr)
+library(tidyverse)
+library(usmap)
+library(maps)
+library(mapproj)
+library(fiftystater)
+library("car")
+library(class)
+library(caret)
+library(e1071)
+library(tidyverse)
+library(ggExtra)
+
+```
+
+Analysis Questions:
+1.How many breweries are present in each state?
+```{r}
+#1.How many breweries are present in each state?
+st_count = brew %>% group_by(State) %>% summarize(Count =n_distinct(Brew_ID))  
+write_excel_csv(st_count, file = "num_brew " )
+colnames(st_count)[1] = "abb" #rename state to abb for future merge
+lookup = data.frame(abb = state.abb, State = state.name) #load in state names and state abbreviations to a dataframe for future merge
+st_count = merge(st_count,lookup,"abb") #make a single data set with state names and abbreviations
+st_count$region <- tolower(st_count$State) #make all state names lowercase for future merge
+st_count = st_count[-1]
+#states = map_data("state")
+colnames(fifty_states)[6] = "region"
+st_count = merge(fifty_states, st_count, by = "region", all.x = T) #merge the dateframes to include regions
+st_count = st_count[order(st_count$order),] #order the dataframe to paint a proper map
+
+st_count %>% ggplot(aes(x = fifty_states$long, y = fifty_states$lat, group = group)) + geom_polygon(aes(fill = Count)) + geom_path() + scale_fill_gradientn(colors = hcl.colors(10, "RdYlGn", rev = TRUE), na.value = "grey90")+ggtitle("Number of Breweries in Each State") + xlab("Latitude") + ylab("Longitude") + coord_quickmap()#plot the heatmap
+
+```
+Analysis Questions:
+1.1. Which states consume the most beer?
+```{r}
+# #the following Beer consumption data was found on the following article: https://vinepair.com/articles/map-states-drink-beer-america-2020/#:~:text=THE%20STATES%20THAT%20DRINK%20THE%20MOST%20BEER%20OVERALL,and%20New%20York%20trailing%20behind.%20Ranking%20The%20States
+con_count = consume %>% group_by(abb) %>% summarize(Gallons = Gallons_Overall)  
+write_excel_csv(con_count, file = "consume" )
+#colnames(con_count)[1] = "abb" #rename state to abb for future merge
+lookup = data.frame(abb = state.abb, State = state.name) #load in state names and state abbreviations to a dataframe for future merge Count
+con_count = merge(con_count,lookup,"abb") #make a single data set with state names and abbreviations
+con_count$region <- tolower(con_count$State) #make all state names lowercase for future merge
+con_count = con_count[-1]
+#states = map_data("state")
+colnames(fifty_states)[6] = "region"
+con_count = merge(fifty_states, con_count, by = "region", all.x = T) #merge the dateframes to include regions
+con_count = con_count[order(con_count$order),] #order the dataframe to paint a proper map
+
+con_count %>% ggplot(aes(x = fifty_states$long, y = fifty_states$lat, group = group)) + geom_polygon(aes(fill = Gallons)) + geom_path() +  scale_fill_gradientn(colors = hcl.colors(10, "RdYlGn", rev = TRUE), na.value = "grey90") + ggtitle("2018 Beer Consumption per State") + xlab("Latitude") + ylab("Longitude") + coord_quickmap()#plot the heatmap
+```
+2.   Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
+```{r}
+colnames(beer)[5] = "Brew_ID"  #rename brewery ID in Beers data to match Breweries data's brewery ID for future merge
+colnames(beer)[1] = "Beer Name" #delineates between beer name and brewery names
+colnames(brew)[2] = "Brewery Name"
+
+bb = merge(beer, brew, by = "Brew_ID", all.x = T) #make the merge
+head(bb) #1st six observations
+tail(bb) #last six observations
+```
+
+3.   Address the missing values in each column.
+```{r}
+bb_clean = na.omit(bb) #%>% filter(!is.na(ABV) & !is.na(IBU) & !is.na(Style))
+
+```
+
+
+4.   Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
+
+```{r}
+#get the median values for each state
+abv = bb_clean  %>% group_by(State) %>% summarise(median(ABV)) 
+ibu = bb_clean  %>% group_by(State) %>% summarise(median(IBU))
+
+#make a data frame from the median values
+meds = merge(abv, ibu, by = "State") 
+print(meds)
+#order the states by median values
+am = meds[order(meds$`median(ABV)`),]
+im = meds[order(meds$`median(IBU)`),]
+
+
+
+
+
+#Barplot for median ABV for each state
+am %>% ggplot(aes(x = reorder(State, -`median(ABV)`), y = `median(ABV)`, fill = `median(ABV)`)) + geom_col() + ggtitle("Median ABV for Each State") + xlab("State") + ylab("Median ABV") + labs(fill = "Median ABV")
+
+
+
+#ready US map plot for ABV for each state
+colnames(am)[1] = "abb"
+am  = merge(am ,lookup,"abb") #make a single data set with state names and abbreviations
+am $region <- tolower(am $State) #make all state names lowercase for future merge
+am  = am [-1]
+colnames(fifty_states)[6] = "region"
+am = merge(fifty_states, am, by = "region", all.x = T) #merge the dateframes to include regions
+am = am[order(am$order),] #order the dataframe to paint a proper map
+
+#heatmap for the median ABV for each state
+am %>% ggplot(aes(x = fifty_states$long, y = fifty_states$lat, group = group)) + geom_polygon(aes(fill = `median(ABV)`)) + geom_path() + scale_fill_gradientn(colors = hcl.colors(10, "RdYlGn", rev = TRUE), na.value = "grey90")+ggtitle("Median ABV for Each State") + xlab("Latitude") + ylab("Longitude") + coord_quickmap()
+
+
+
+
+
+
+#Barplot for median IBU for each state
+im %>% ggplot(aes(x = reorder(State, -`median(IBU)`), y = `median(IBU)`, fill = `median(IBU)`)) + geom_col() + ggtitle("Median IBU for Each State") + xlab("State") + ylab("Median IBU") + labs(fill = "Median IBU")
+
+
+
+#ready US map plot for median IBU for each state
+colnames(im)[1] = "abb"
+im  = merge(im ,lookup,"abb") #make a single data set with state names and abbreviations
+im $region <- tolower(im $State) #make all state names lowercase for future merge
+im  = im [-1]
+colnames(fifty_states)[6] = "region"
+im = merge(fifty_states, im, by = "region", all.x = T) #merge the dateframes to include regions
+im = im[order(im$order),] #order the dataframe to paint a proper map
+
+#heatmap for the median IBU for each state
+im %>% ggplot(aes(x = fifty_states$long, y = fifty_states$lat, group = group)) + geom_polygon(aes(fill = `median(IBU)`)) + geom_path() + scale_fill_gradientn(colors = hcl.colors(10, "RdYlGn", rev = TRUE), na.value = "grey90")+ggtitle("Median IBU for Each State") + xlab("Latitude") + ylab("Longitude") + coord_quickmap()
+```
+
+5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+```{r}
+#order the states by median values
+abv_max = bb_clean  %>% group_by(State) %>% summarise(max(ABV)) 
+abv_max = abv_max[order(-abv_max$`max(ABV)`),]
+abv_max[1,]
+ibu_max = bb_clean  %>% group_by(State) %>% summarise(max(IBU))
+ibu_max = ibu_max[order(-ibu_max$`max(IBU)`),]
+ibu_max[1,]
+```
+
+6.   Comment on the summary statistics and distribution of the ABV variable.
+```{r}
+
+summary(bb_clean$ABV)
+bb_clean %>% ggplot(mapping = aes(x = ABV,  fill = "red" )) + geom_histogram() + ggtitle("ABV Value Distribution") + xlab("ABV Value") + ylab("Count of ABV Value")
+shapiro.test(bb_clean$ABV)
+qqPlot(bb_clean$ABV)
+# The ABV values does not closely follow a normal distribution. In fact, it is slightly skewed right with a mean of 0.060 and median of 0.057. This implies that there are other variables that are influencing the ABV values for beers across the country. This information begs to be further analyzed to find relationships that ABV values could have with other variables. 
+
+
+```
+
+
+7.   Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+```{r}
+#assign categories for 
+abv_cat = bb_clean %>% mutate(ABV_Category = cut(ABV, breaks = c(0,0.5000,0.05700, 0.06800, 0.12600), labels = c("Low","Medium", "High", "Very High")))
+
+#summary(bb_clean$IBU)
+abv_ibu_cat = abv_cat %>% mutate(IBU_Category = cut(IBU, breaks = c(0,21,35, 64, 139), labels = c("Low","Medium", "High", "Very High")))
+
+p = abv_ibu_cat %>% ggplot(mapping = aes(x = IBU, y = ABV)) + geom_point(position = "jitter", color = "red") + geom_smooth(method = "lm", se = FALSE, color = "blue") + ggtitle("International Bitterness Unit (IBU) vs Alcohol by Volume (ABV)") + xlim(0,150) + ylim(0,0.130)
+
+ggMarginal(p, type="histogram", fill = "red")
+#test relationships between the IBU and ABV variables
+relate_test <-  cor.test(abv_ibu_cat$IBU, abv_ibu_cat$ABV, method = "spearman")
+##########################################################
+###Because the p-value of the test is 2.2e-16, which is less than the significance level alpha = 0.05. We can conclude that IBU and ABV are significantly correlated with a correlation coefficient of 0.6707224 and p-value of 2.2e-16.
+##########################################################
+#abv_ibu_cat %>% select(IBU, ABV, ABV_Category, IBU_Category) %>% ggpairs(aes(color = IBU_Category))
+```
+
+
+
+8.  Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
+
+In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.  
+•	T-test to check for differences
+```{r}
+
+bb_clean = na.omit(bb)#reset bb_clean
+IPAorALE = ""
+
+#populate IPAorALE column 
+for(i in 1:length(bb_clean$Style)){
+if(grepl("IPA", bb_clean$Style[i], fixed = TRUE) == "TRUE"){
+  bb_clean$IPAorALE[i] = "IPA"} else if(grepl("Ale", bb_clean$Style[i], fixed = TRUE) == "TRUE"){
+    bb_clean$IPAorALE[i] = "Ale"} else {
+      bb_clean$IPAorALE[i] = "Other"}
+}
+bb_clean = bb_clean %>% relocate(IPAorALE, .after = Style) #relocate the style classification next to Style
+
+IvA = bb_clean %>% filter(IPAorALE != "NA") #build a dataframe for just IPAs and Ales only 
+
+#plot the non-Anheuser-Busch beers IBU v ABV and delineate the beer style (IPA or Ale)
+bb_clean %>% ggplot(mapping = aes(x = IBU, y = ABV, color = IPAorALE)) + geom_point(position = "jitter") + geom_smooth(method = "lm", se = FALSE, color = "blue") + ggtitle("International Bitterness Unit (IBU) vs Alcohol by Volume (ABV)") +scale_color_discrete("Style of Beer") + xlim(0,150) + ylim(0,0.130)
+
+#plot the Anheuser-Busch beers IBU v ABV and delineate the beer style (IPA or Ale)
+ab_beer %>% ggplot(mapping = aes(x = IBU, y = ABV, color = Style)) + geom_point(position = "jitter") + ggtitle("International Bitterness Unit (IBU) vs Alcohol by Volume (ABV)") +scale_color_discrete("Style of Beer") + xlim(0,150) + ylim(0,0.130)
+
+#set up knn
+set.seed(6) #set the seed
+splitperc = .70 #training the model with 70% of the data and testing the models accuracy with 30% of the data
+
+#setting up the knn training data
+train_i = sample(1:length(bb_clean$IPAorALE), round(splitperc*length(bb_clean$IPAorALE)))
+train = bb_clean[train_i, ]
+test = bb_clean[-train_i, ]
+
+class = knn(train[, c(4,5)], test[, c(4,5)], train$IPAorALE, prob = TRUE, k = 5)
+table(class, test$IPAorALE)
+confusionMatrix(table(class, test$IPAorALE))
+
+#head(meds)
+demand = ""
+model = data.frame(meds, demand)
+#head(model)
+
+#use best knn k-value to classify each state to predict the style of beer that could be in highest demand based on ABV and IBU
+for(i in 1:length(meds$State))
+{
+  try =  knn(train[,c(4,5)], meds[i, c(2,3)], train$IPAorALE, prob = TRUE, k = 5)
+  model[i , 4] = try[1]
+  if(model[i , 4] == "1"){
+    model[i , 4] = "Ale"} else if(model[i , 4] == "2"){
+      model[i , 4] = "IPA"} else if(model[i , 4] == "3"){
+        model[i , 4] = "Other"}
+}
+
+#This model predicts what style of beer each state most demands.
+model
+```
